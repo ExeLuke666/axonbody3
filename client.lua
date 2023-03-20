@@ -9,6 +9,27 @@ if GetConvar('tfnrp_framework_init', 'false') == 'true' then
   Config.CommandAccessHandling = function ()
     return exports.framework:GetLocalClientDuty() > 0
   end
+
+elseif Config.CommandAccessAce then
+  Config.CommandAccessAce = nil
+  local hasAce = false
+  local pass = false
+  local commandAccessHandling = Config.CommandAccessHandling
+
+  RegisterNetEvent('AB3:ServerHasAce', function (bool)
+    hasAce = bool
+  end)
+  TriggerServerEvent('AB3:ClientHasAce')
+
+  Config.CommandAccessHandling = function ()
+    if not pass then
+      pass = true
+      Citizen.SetTimeout(2.5e3, function () pass = false end)
+      TriggerServerEvent('AB3:ClientHasAce')
+    end
+
+    return hasAce and commandAccessHandling()
+  end
 end
 
 ----------------------------------------------------------

@@ -50,6 +50,7 @@ All config variables are client-side and only computed on a client's machine.
 property | type | description
 -- | -- | --
 `CommandAccessHandling` | function | handling used to verify if the client should be able to enable AB3  
+`CommandAccessAce` | string\|nil | Use ACL to determine whether the client should be able to enable AB3  
 `CommandBinding ` | string\|nil | keybind to use for on/off command. can be nil for no keybind  
 `ThirdPersonMode` | boolean | whether the axon overlay is also visible in third person  
 
