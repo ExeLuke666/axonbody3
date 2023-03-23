@@ -128,25 +128,41 @@ end)
 
 -- Utils
 
+local idx
+-- dynamic buffer of thread logic for suspended threads
+local buffer = {}
+-- sum of threads + 1 to store bool
+local count = 3
+local function bufferReduce(idx) buffer[idx] = buffer[idx] - 1 end
+local function bufferFirstIdx()
+  local idx = #buffer
+  for i = 0, idx do if 0 == buffer[i] then return i end end
+  return idx + 1
+end
+
 function ActivateAB3()
   if activated then
     return error('AB3 attempted to activate when already active.')
   end
 
   activated = true
+  idx = bufferFirstIdx()
+  buffer[idx] = count
+  local cidx = idx
 
   -- beeper
   Citizen.CreateThread(function()
     Citizen.Wait(12e4)
-    while activated do
+    while count == buffer[cidx] do
       TriggerServerEvent('AB3:ClientBeep')
       Citizen.Wait(12e4)
     end
+    bufferReduce(cidx)
   end)
 
   -- HUD
   Citizen.CreateThread(function()
-    while activated do
+    while count == buffer[cidx] do
       Citizen.Wait(0)
       if (GetFollowPedCamViewMode() == 4 or Config.ThirdPersonMode) and not hudForceHide then
         if not hudPresence then
@@ -157,6 +173,7 @@ function ActivateAB3()
       end
     end
     SetHudPresence(false)
+    bufferReduce(cidx)
   end)
 end
 
@@ -166,6 +183,7 @@ function DeactivateAB3()
   end
 
   activated = false
+  bufferReduce(idx)
 end
 
 function SetHudPresence(state)
