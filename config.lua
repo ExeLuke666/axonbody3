@@ -27,8 +27,8 @@ Config = {
   --- @type boolean
   ThrottleServerEvents = false,
   --- [Server] Whether the player should be dropped if the throttle is violated.  
-  --- The only plausible way for a player to violate a throttle is by cheating 
-  --- or a race condition.
+  --- The only plausible way for a player to violate a throttle is by cheating, 
+  --- spamming AB3 record button or a race condition.
   --- @type boolean
   ThrottleDropPlayer = true,
 }

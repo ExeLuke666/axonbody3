@@ -159,9 +159,10 @@ function ActivateAB3()
 
   -- beeper
   Citizen.CreateThread(function()
+    TriggerServerEvent('AB3:ClientBeep:EVENT_START')
     Citizen.Wait(12e4)
     while count == buffer[cidx] do
-      TriggerServerEvent('AB3:ClientBeep')
+      TriggerServerEvent('AB3:ClientBeep:EVENT_DURING')
       Citizen.Wait(12e4)
     end
     bufferReduce(cidx)
