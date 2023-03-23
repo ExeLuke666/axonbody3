@@ -2,7 +2,7 @@ fx_version 'cerulean'
 game 'gta5'
 
 repository 'https://github.com/TFNRP/axonbody3'
-version '0.2.1'
+version '0.3.0'
 author 'Reece Stokes <hagen@hyena.gay>'
 
 shared_script 'config.lua'
