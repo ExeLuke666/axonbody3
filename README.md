@@ -11,12 +11,13 @@
 - [Installation](#installation)
 - [Features](#features)
 - [Configuration](#configuration)
-- [Credits](#credits)
 - [Screenshots](#screenshots)
+- [Contributing](#contributing)
+- [Credits & Copyright](#credits--copyright)
 
 ## About
 
-The most realistic Axon Body 3 script, based off of [RCPisAwesome's Axon Body Camera](https://forum.cfx.re/t/realistic-axon-body-camera/1155758).  
+The most realistic Axon Body 3 script, based on [Axon Body Camera](https://forum.cfx.re/t/realistic-axon-body-camera/1155758).  
 ![img](https://i.imgur.com/Kzf8WpA.png "Real AB3 overlay")  
 ![img](https://i.imgur.com/1QQ5LmF.png "This script")  
 
@@ -29,34 +30,41 @@ TFNRP’s Axon Body 3 script’s goal is to be as realistic as possible, with fu
 
 Clone from Git or download manually  
 
-```bash
-$ git clone https://github.com/TFNRP/axonbody3.git
+```sh-session
+git clone https://github.com/TFNRP/axonbody3.git
 ```
+
+To be able to use AB3, implement the `ab3.user.toggle` ace in your server config.  
+
+> **Note**: If you don't need ACL checks, you may disable this ace by setting `CommandAccessAce` to `nil`, and implement the client-side logic in `CommandAccessHandling`.
 
 ## Features
 
-* Supports the [TFNRP framework](https://github.com/TFNRP/framework) to allow use for LEO.  
-* Just like the real thing. Beeps every 2 minutes whilst recording, audible to nearby players.  
-* Realistic overlay, with the same font used by Axon, ISO-8601 date format and transparent Axon logo.
-* Maximum server performance. Everything that can be done client-side, is.
-* Two commands included: 
-  * `/axon`, `/axonon`, `/axonoff` - Starts/stops Axon recording
-  * `/axonhide`, `/axonshow` - Hide/show the first-person overlay
+- Supports the [TFNRP framework](https://github.com/TFNRP/framework) to allow use for LEO.  
+- Just like the real thing. Beeps every 2 minutes whilst recording, **audible to nearby players**.  
+- Realistic overlay, with the same font used by Axon, ISO-8601 date format and transparent Axon logo.
+- Maximum server performance. Everything that can be done client-side, is.
+- Two commands included:  
+  - `/axon`, `/axonon`, `/axonoff` - Starts/stops Axon recording
+  - `/axonhide`, `/axonshow` - Hide/show the first-person overlay
 
 ## Configuration
 
-All config variables are client-side and only computed on a client's machine.  
+The `config.lua` is shared between the client and server.  
+Config variables are explained in greater detail in `config.lua`, but here's an overview.
+
+> **Warning**  
+> Do not enter server secrets in `config.lua`.
 
 property | type | description
 -- | -- | --
-`CommandAccessHandling` | function | handling used to verify if the client should be able to enable AB3  
-`CommandAccessAce` | string\|nil | Use ACL to determine whether the client should be able to enable AB3  
-`CommandBinding ` | string\|nil | keybind to use for on/off command. can be nil for no keybind  
-`ThirdPersonMode` | boolean | whether the axon overlay is also visible in third person  
-
-## Credits
-
-Special thanks to RCPisAwesome for allowing me to use his Axon beep sound.
+`CommandBinding` = `'u'` | string\|nil | Keybind to use for on/off command. May be nil for no keybind  
+`ThirdPersonMode` = `false` | boolean | Whether the axon overlay is also visible in third person  
+||
+`CommandAccessHandling` | function | Handling used to verify if the client should be able to enable AB3  
+`CommandAccessAce` = `'ab3'` | string\|nil | Use ACL to determine whether the client should be able to enable AB3  
+`ThrottleServerEvents` = `false` | boolean | Whether server events should be throttled server-side  
+`ThrottleDropPlayer` = `true` | boolean | Whether the player should be dropped if the throttle is violated
 
 ## Screenshots
 
@@ -65,3 +73,11 @@ Special thanks to RCPisAwesome for allowing me to use his Axon beep sound.
 ## Contributing
 
 Please read [Contributing](https://github.com/TFNRP/axonbody3/blob/main/CONTRIBUTING.md) before submitting a pull request.
+
+## Credits & Copyright
+
+- [@RCPisAwesome](https://forum.cfx.re/u/RCPisAwesome) for
+  - their [Axon Body Camera](https://github.com/RCPisAwesome/FiveMRCPAxonCamera) script; and
+  - providing and giving permission of use of `static/beep.wav` file.
+
+Licensed under [MIT License](https://github.com/TFNRP/axonbody3/blob/main/LICENSE).
