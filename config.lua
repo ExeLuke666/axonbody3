@@ -19,6 +19,7 @@ Config = {
   end,
   --- [Server] Use ACL to determine whether the client should be able to enable AB3.  
   --- ACL will be checked befored CommandAccessHandling, if it exists.  
+  --- The ab3.user.toggle ace should be used, where ab3 is the value set below.  
   --- @type string|nil -- String representation of the "root" ace.
   CommandAccessAce = 'ab3',
   --- [Server] Whether server events should be throttled server-side.  

@@ -26,7 +26,7 @@ else
 end
 
 if Config.CommandAccessAce then
-  local ace = Config.CommandAccessAce
+  local ace = Config.CommandAccessAce .. '.user.toggle'
   RegisterNetEvent('AB3:ClientHasAce', function()
     TriggerClientEvent('AB3:ServerHasAce', source, IsPlayerAceAllowed(source, ace))
   end)
