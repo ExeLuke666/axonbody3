@@ -34,12 +34,12 @@ setInterval(() => {
 
 $(() => {
   window.addEventListener('message', event => {
-    if ('AxonUIPresence' in event.data) {
-      $('#ui').css('display', event.data.AxonUIPresence ? 'block' : 'none');
+    if ('PRESENCE' in event.data) {
+      $('#ui').css('display', event.data.PRESENCE ? 'block' : 'none');
     }
 
-    if ('AxonBeep' in event.data) {
-      player.volume(event.data.AxonBeep.volume);
+    if ('PLAY_AT_VOLUME' in event.data) {
+      player.volume(event.data.PLAY_AT_VOLUME);
       player.play();
     }
   });

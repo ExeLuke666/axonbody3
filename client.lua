@@ -59,7 +59,7 @@ RegisterCommand('axon', function ()
     DeactivateAB3()
     ShowNotification('~y~Axon Body 3~s~ has ~r~stopped recording~s~.')
   else
-    if not Config:CommandAccessHandling() then
+    if not Config.CommandAccessHandling() then
       ShowNotification('You have to be ~r~on duty~s~ to enable ~y~Axon Body 3~s~.')
     else
       ActivateAB3()
@@ -69,7 +69,7 @@ RegisterCommand('axon', function ()
 end)
 
 RegisterCommand('axonon', function ()
-  if not Config:CommandAccessHandling() then
+  if not Config.CommandAccessHandling() then
     ShowNotification('You have to be ~r~on duty~s~ to use ~y~Axon Body 3~s~.')
   else
     if activated then
@@ -98,11 +98,17 @@ end)
 
 -- Events
 
+--- This event is unimplemented and should be used by external client scripts.  
+--- Will emit an error if parameters are incorrect or if state is already the same.
+--- Please make sure state is synchronised with your implementation.  
+--- @param state boolean -- Whether AB3 should be activated.
 RegisterNetEvent('AB3:SetState', function(state)
   if state == true then
     ActivateAB3()
   elseif state == false then
     DeactivateAB3()
+  else -- defensive programming
+    error('what')
   end
 end)
 
@@ -110,18 +116,17 @@ RegisterNetEvent('AB3:ServerBeep', function(netId)
   local otherPed = GetPlayerPed(GetPlayerFromServerId(netId))
   local ped = PlayerPedId()
   if DoesEntityExist(otherPed) and (IsPedInAnyVehicle(ped) == IsPedInAnyVehicle(otherPed)) or not IsPedInAnyVehicle(ped) then
-    local volume = 0.05
-    local radius = 10
-
     local playerCoords = GetEntityCoords(ped)
     local targetCoords = GetEntityCoords(otherPed)
-
     local distance = #(playerCoords - targetCoords)
-    local distanceVolumeMultiplier = volume / radius
-    local distanceVolume = volume - (distance * distanceVolumeMultiplier)
 
+    local volume = 0.05
+    local radius = 10
     if (distance <= radius) then
-      SendNUIMessage({ AxonBeep = { volume = distanceVolume } })
+      local distanceVolumeMultiplier = volume / radius
+      local distanceVolume = volume - (distance * distanceVolumeMultiplier)
+
+      SendNuiMessage('{"PLAY_AT_VOLUME":' .. distanceVolume .. '}')
     end
   end
 end)
@@ -164,7 +169,7 @@ function ActivateAB3()
   Citizen.CreateThread(function()
     while count == buffer[cidx] do
       Citizen.Wait(0)
-      if (GetFollowPedCamViewMode() == 4 or Config.ThirdPersonMode) and not hudForceHide then
+      if not hudForceHide and (Config.ThirdPersonMode or GetFollowPedCamViewMode() == 4) then
         if not hudPresence then
           SetHudPresence(true)
         end
@@ -187,7 +192,7 @@ function DeactivateAB3()
 end
 
 function SetHudPresence(state)
-  SendNUIMessage({AxonUIPresence = state})
+  SendNuiMessage('{"PRESENCE":' .. (state and 1 or 0) .. '}')
   hudPresence = state
 end
 
