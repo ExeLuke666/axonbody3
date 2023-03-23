@@ -2,7 +2,7 @@
 --- @type table
 Config = {
   --- [Client] Keybind to use for on/off command. can be nil for no keybind.
-  --- @type string
+  --- @type string|nil
   CommandBinding = 'u',
   --- [Client] Whether the axon overlay is also visible in third person.
   --- @type boolean
