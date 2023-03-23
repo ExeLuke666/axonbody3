@@ -2,6 +2,8 @@
 local hudForceHide = false
 local hudPresence = false
 local activated = false
+Config.ThrottleServerEvents = nil
+Config.ThrottleDropPlayer = nil
 
 -- Compatibility with frameworks
 
