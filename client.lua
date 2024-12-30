@@ -1,206 +1,121 @@
--- globals
+-- // Globals
 local hudForceHide = false
 local hudPresence = false
 local activated = false
-Config.ThrottleServerEvents = nil
-Config.ThrottleDropPlayer = nil
-
--- Compatibility with frameworks
-
-if GetConvar('tfnrp_framework_init', 'false') == 'true' then
-  Config.CommandAccessHandling = function ()
-    return exports.framework:GetLocalClientDuty() > 0
-  end
-
-elseif Config.CommandAccessAce then
-  Config.CommandAccessAce = nil
-  local hasAce = false
-  local pass = false
-  local commandAccessHandling = Config.CommandAccessHandling
-
-  RegisterNetEvent('AB3:ServerHasAce', function (bool)
-    hasAce = bool
-  end)
-  TriggerServerEvent('AB3:ClientHasAce')
-
-  Config.CommandAccessHandling = function ()
-    if not pass then
-      pass = true
-      Citizen.SetTimeout(2.5e3, function () pass = false end)
-      TriggerServerEvent('AB3:ClientHasAce')
-    end
-
-    return hasAce and commandAccessHandling()
-  end
-end
-
-----------------------------------------------------------
--------------------- Commands
-----------------------------------------------------------
-
-
--- HUD
+local batteryLevel = 100
+local preEventBuffer = {}
+local bufferSize = 60
 
 RegisterCommand('axonhide', function()
   hudForceHide = true
-  ShowNotification('~y~Axon Body 3~s~ overlay now ~r~hidden~s~.')
+  ShowNotification('~y~Axon Body 3:~s~ overlay now ~g~visible~s~.')
 end)
 
-RegisterCommand('axonshow', function()
+RegisterCommand('axonshow' function()
   hudForceHide = false
-  ShowNotification('~y~Axon Body 3~s~ overlay now ~g~visible~s~.')
+  ShowNotification('~y~Axon Body 3:~s~ overlay now ~g~visible~s~.')
 end)
 
--- Activation and deactivation
-
-if Config.CommandBinding then
-  RegisterKeyMapping('axon', 'Toggle Axon Body 3', 'keyboard', Config.CommandBinding)
-end
-RegisterCommand('axon', function ()
+RegisterCommand('axon', function()
   if activated then
     DeactivateAB3()
     ShowNotification('~y~Axon Body 3~s~ has ~r~stopped recording~s~.')
   else
-    if not Config.CommandAccessHandling() then
-      ShowNotification('You have to be ~r~on duty~s~ to enable ~y~Axon Body 3~s~.')
-    else
-      ActivateAB3()
-      ShowNotification('~y~Axon Body 3~s~ has ~g~started recording~s~.')
-    end
-  end
-end)
-
-RegisterCommand('axonon', function ()
-  if not Config.CommandAccessHandling() then
-    ShowNotification('You have to be ~r~on duty~s~ to use ~y~Axon Body 3~s~.')
-  else
-    if activated then
-      ShowNotification('~y~Axon Body 3~s~ is already ~g~recording~s~.')
-    else
-      ActivateAB3()
-      ShowNotification('~y~Axon Body 3~s~ has ~g~started recording~s~.')
-    end
-  end
-end)
-
-RegisterCommand('axonoff', function ()
-  if not activated then
-    ShowNotification('~y~Axon Body 3~s~ has already ~r~stopped recording~s~.')
-  else
-    DeactivateAB3()
-    ShowNotification('~y~Axon Body 3~s~ has ~r~stopped recording~s~.')
-  end
-end)
-
-
-----------------------------------------------------------
-----------------------------------------------------------
-----------------------------------------------------------
-
-
--- Events
-
---- This event is unimplemented and should be used by external client scripts.  
---- Will emit an error if parameters are incorrect or if state is already the same.
---- Please make sure state is synchronised with your implementation.  
---- @param state boolean -- Whether AB3 should be activated.
-RegisterNetEvent('AB3:SetState', function(state)
-  if state == true then
     ActivateAB3()
-  elseif state == false then
-    DeactivateAB3()
-  else -- defensive programming
-    error('what')
+    ShowNotification('~y~Axon Body 3~s~ has ~g~started recording~s~.')
+  end
+end)
+
+RegisterCommand('axonbattery', function()
+  ShowNotification('~y~Axon Body 3~s~ battery level: ~b~' .. batteryLevel .. '%~s~.')
+end)
+
+RegisterCommand('axonbuffer', function()
+  if not activated then
+      ShowNotification('~y~Showing pre-event buffer~s~...')
+      ShowPreEventBuffer()
+  else
+      ShowNotification('~r~Cannot access pre-event buffer while recording~s~.')
   end
 end)
 
 RegisterNetEvent('AB3:ServerBeep', function(netId)
   local otherPed = GetPlayerPed(GetPlayerFromServerId(netId))
-  local ped = PlayerPedId()
-  if DoesEntityExist(otherPed) and (IsPedInAnyVehicle(ped) == IsPedInAnyVehicle(otherPed)) or not IsPedInAnyVehicle(ped) then
-    local playerCoords = GetEntityCoords(ped)
-    local targetCoords = GetEntityCoords(otherPed)
-    local distance = #(playerCoords - targetCoords)
-
-    local volume = 0.05
-    local radius = 10
-    if (distance <= radius) then
-      local distanceVolumeMultiplier = volume / radius
-      local distanceVolume = volume - (distance * distanceVolumeMultiplier)
-
-      SendNuiMessage('{"PLAY_AT_VOLUME":' .. distanceVolume .. '}')
-    end
+  if DoesEntityExist(otherPed) then
+      local volume = 0.05
+      local radius = 10
+      local distance = #(GetEntityCoords(PlayerPedId()) - GetEntityCoords(otherPed))
+      if distance <= radius then
+          SendNuiMessage('{"PLAY_AT_VOLUME":' .. volume .. '}')
+      end
   end
 end)
 
--- Utils
+Citizen.CreateThread(function()
+  while true do
+      Citizen.Wait(60e3) -- 1 minute intervals
+      if activated and batteryLevel > 0 then
+          batteryLevel = batteryLevel - 1
+          if batteryLevel == 10 then
+              ShowNotification('~y~Axon Body 3~s~ battery is ~r~critically low~s~.')
+          elseif batteryLevel == 0 then
+              ShowNotification('~y~Axon Body 3~s~ has ~r~shut down due to low battery~s~.')
+              DeactivateAB3()
+          end
+      end
+  end
+end)
 
-local idx
--- dynamic buffer of thread logic for suspended threads
-local buffer = {}
--- sum of threads + 1 to store bool
-local count = 3
-local function bufferReduce(idx) buffer[idx] = buffer[idx] - 1 end
-local function bufferFirstIdx()
-  local idx = #buffer
-  for i = 0, idx do if 0 == buffer[i] then return i end end
-  return idx + 1
+function saveToBuffer(data)
+  table.insert(preEventBuffer, {
+      timestamp = os.time(),
+      event = data
+  })
+
+  if #preEventBuffer > bufferSize then
+      table.remove(preEventBuffer, 1)
+  end
+
+  print("Saved to buffer: ", data)
+end
+
+function printBuffer()
+  for _, event in ipairs(preEventBuffer) do
+    print(string.format("Time: %s, Event: %s", os.date('%X', event.timestamp), event.event))
+  end
 end
 
 function ActivateAB3()
-  if activated then
-    return error('AB3 attempted to activate when already active.')
-  end
-
+  if activated then return end
   activated = true
-  idx = bufferFirstIdx()
-  buffer[idx] = count
-  local cidx = idx
-
-  -- beeper
-  Citizen.CreateThread(function()
-    TriggerServerEvent('AB3:ClientBeep:EVENT_START')
-    Citizen.Wait(12e4)
-    while count == buffer[cidx] do
-      TriggerServerEvent('AB3:ClientBeep:EVENT_DURING')
-      Citizen.Wait(12e4)
-    end
-    bufferReduce(cidx)
-  end)
-
-  -- HUD
-  Citizen.CreateThread(function()
-    while count == buffer[cidx] do
-      Citizen.Wait(0)
-      if not hudForceHide and (Config.ThirdPersonMode or GetFollowPedCamViewMode() == 4) then
-        if not hudPresence then
-          SetHudPresence(true)
-        end
-      elseif hudPresence then
-        SetHudPresence(false)
-      end
-    end
-    SetHudPresence(false)
-    bufferReduce(cidx)
-  end)
+  SaveToBuffer('AB3 activated')
+  UpdateHud()
 end
 
 function DeactivateAB3()
-  if not activated then
-    return error('AB3 attempted to deactivate when already deactivated.')
-  end
-
+  if not activated then return end
   activated = false
-  bufferReduce(idx)
+  SaveToBuffer('AB3 deactivated')
+  UpdateHud()
 end
 
-function SetHudPresence(state)
-  SendNuiMessage('{"PRESENCE":' .. (state and 1 or 0) .. '}')
-  hudPresence = state
+function UpdateHud()
+  if not hudForceHide and (Config.ThirdPersonMode or GetFollowPedCamViewMode() == 4) then
+      local hudData = {
+          presence = true,
+          recording = activated,
+          battery = batteryLevel
+      }
+      SendNuiMessage(json.encode(hudData))
+      hudPresence = true
+  elseif hudPresence then
+      SendNuiMessage('{"PRESENCE":0}')
+      hudPresence = false
+  end
 end
 
 function ShowNotification(message)
   BeginTextCommandThefeedPost('STRING')
-  AddTextComponentSubstringPlayerName(message)
-  EndTextCommandThefeedPostTicker(true, false)
+  AddTextComponentSubStringPlayerName(message)
+  EndTextCOmmandThefeedPostTicker(true, false)
 end
